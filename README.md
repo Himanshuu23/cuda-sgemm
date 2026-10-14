@@ -4,7 +4,6 @@ Five hand-written fp32 matrix-multiply kernels, `C = A * B` (square, row-major, 
 one fixing the main bottleneck of the previous one, benchmarked against `cublasSgemm`.
 All kernels are written from scratch for this repo. The *idea* of this ladder (naive -> coalesced
 -> shared memory -> register blocking -> vectorisation) is inspired by Simon Boehm's excellent
-article **["How to Optimize a CUDA Matmul Kernel for cuBLAS-like Performance"](https://siboehm.com/articles/22/CUDA-MMM)**;
 
 | # | Kernel (`src/kernels/`) | Idea |
 |---|---|---|
@@ -42,7 +41,7 @@ median of 20 runs, each timed with its own `cudaEvent` pair. GFLOPS = `2*N^3 / t
 
 ## Results (measured on RTX 2050)
 
-Median of 20 runs after 3 warmups. Theoretical peak: not printed
+Median of 20 runs after 3 warmups.
 (CUDA 13 removed the clock attribute the harness used); with 16 SMs x 128 FP32 lanes x 2 FLOP it is
 `4.096 x clock_GHz` TFLOPS. Max SM clock 2100 MHz (`nvidia-smi`), board power cap 50 W. At that clock the theoretical FP32 peak is 8602 GFLOPS (16 x 128 x 2 x 2.1 GHz); cuBLAS's best here (4215 GFLOPS) is ~49% of it and `vectorized`'s best (3969) ~46%. The sustained clock under the 50 W cap was not measured and is likely lower, so real efficiency is higher than these percentages.
 
@@ -88,8 +87,6 @@ to a fixed base clock while profiling, which is the likely reason. Use the profi
 
 ## What limited each kernel
 
-Each point uses the numbers above; where a measurement contradicted my expectation, it says so.
-
 1. **naive (53.6 GFLOPS at N=2048)** — Not DRAM- or L2-bandwidth-bound (2.7% / 1.9%). The dominant stall by a wide
    margin is `lg_throttle` (197.8): the SM's queue for global-memory instructions is full. Each warp-wide A load
    likely splits into 32 separate requests, so the load/store path chokes long before the memory system does.
@@ -104,8 +101,7 @@ Each point uses the numbers above; where a measurement contradicted my expectati
 4. **reg_blocked (65% of cuBLAS at N=2048)** — 202 registers/thread allows only one 256-thread block per SM (arithmetic: 202 regs
    rounds up to 208 x 256 threads = 53,248 of the SM's 65,536 registers), i.e. 8 warps = 16.7% occupancy, matching the
    measurement. No stall reason dominates, since the few warps are mostly issuing; with so few warps there is little to hide
-   shared/global load latency or the barriers, and loads are scalar. *Unexpected:* 782k shared-store conflicts, again not
-   predicted by my index math (same TODO as above).
+   shared/global load latency or the barriers, and loads are scalar. *Unexpected:* 782k shared-store conflicts
 5. **vectorized (94-97% of cuBLAS for N>=1024)** — 117 registers/thread -> 2 blocks/SM = 32.5% occupancy (measured), zero
    bank conflicts in loads and stores (the padded/transposed layout does what it was designed to), and fewer, wider memory
    instructions. Highest memory-system use of the five (DRAM 51.4%, L2 31.4%) but nowhere near saturated, and no stall
@@ -122,5 +118,5 @@ scripts/profile.sh      Nsight Compute driver      scripts/ncu_summary.py  repor
 scripts/plot.py         results.csv -> gflops.png
 tests/                  CPU emulation test (no GPU needed) for the kernels' index math
 docs/                   terminal screenshots of the benchmark run
-results/                results.csv, gflops.png, ncu_summary.md, ncu/*.ncu-rep[z] (generated)
+results/                results.csv, gflops.png, ncu/*.ncu-rep[z] (generated)
 ```
