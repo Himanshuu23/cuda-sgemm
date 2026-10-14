@@ -1,21 +1,3 @@
-// naive.cu - Kernel 1: one thread per output element, "obvious" index mapping.
-//
-//   C[row][col] = sum_k A[row][k] * B[k][col]
-//
-// Launch: block = 32x32 threads, grid = (N/32, N/32).
-//
-// Mapping used here (deliberately the "natural but bad" one):
-//   row = blockIdx.x*32 + threadIdx.x
-//   col = blockIdx.y*32 + threadIdx.y
-//
-// A warp is 32 threads with consecutive threadIdx.x (and the same threadIdx.y).
-// So one warp works on 32 DIFFERENT rows but the SAME column. Consequences:
-//   * A[row*N + k]  : the 32 lanes read addresses N floats apart -> 32 separate
-//                     memory sectors per load instruction (uncoalesced).
-//   * B[k*N + col]  : all lanes read the same address (broadcast, cheap).
-//   * C[row*N + col]: the 32 lanes write N floats apart (uncoalesced store).
-// Every thread also re-reads a full row of A and column of B from global
-// memory: zero data reuse inside the block beyond what the caches catch.
 #include "kernel_common.h"
 #include "../sgemm.h"
 

@@ -1,19 +1,3 @@
-// smem_tiled.cu - Kernel 3: shared-memory tiling (32x32 tiles).
-//
-// Launch: block = 32x32 threads, grid = (N/32, N/32).
-//
-// A block computes a 32x32 tile of C. It walks along K in steps of 32:
-//   1. cooperatively load a 32x32 tile of A and a 32x32 tile of B into shared
-//      memory (each thread loads exactly one element of each),
-//   2. __syncthreads(),
-//   3. every thread does 32 FMAs reading ONLY shared memory,
-//   4. __syncthreads() again before the tiles are overwritten.
-// Each value fetched from global memory is now used 32 times instead of once,
-// so global traffic drops ~32x.
-//
-// Bank-conflict check (32 banks, 4 bytes each, warp = fixed ty, tx = 0..31):
-//   As[ty][k] : same address for all lanes -> broadcast, no conflict.
-//   Bs[k][tx] : 32 consecutive floats      -> one per bank, no conflict.
 #include "kernel_common.h"
 #include "../sgemm.h"
 

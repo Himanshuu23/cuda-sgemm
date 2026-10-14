@@ -1,14 +1,3 @@
-// cuda_emul.h - a minimal CPU emulator for the CUDA constructs used by the kernels.
-//
-// Purpose: validate thread/block index math and shared-memory tiling logic
-// without a GPU. It is NOT a performance tool and supports only what these
-// kernels use: __global__, __shared__, __syncthreads, threadIdx/blockIdx/
-// blockDim/gridDim, dim3, float4.
-//
-// How it works: blocks run one after another; each thread of a block is a real
-// std::thread, and __syncthreads() is a std::barrier. A function-local `static`
-// array stands in for __shared__ memory (all threads of the running block see
-// the same one, and only one block runs at a time).
 #pragma once
 #include <barrier>
 #include <thread>

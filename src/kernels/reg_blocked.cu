@@ -1,23 +1,3 @@
-// reg_blocked.cu - Kernel 4: 2-D register blocking.
-//
-// Launch: block = 256 threads (1-D, viewed as 16x16), grid = (N/128, N/128).
-//
-// Tile sizes: BM = BN = 128 (C tile per block), BK = 8 (K step),
-//             TM = TN = 8   (C sub-tile per thread: 8x8 = 64 accumulators).
-// 16x16 threads * 8x8 outputs = 128x128. 
-//
-// Why: in kernel 3 each FMA needs 2 shared-memory loads (1 FMA : 2 LDS), so the
-// shared-memory pipe, not the FMA units, is the limit. Here a thread loads 8
-// A values and 8 B values into registers (16 LDS) and then does an 8x8 outer
-// product = 64 FMAs. That is 4 FMAs per LDS, and the 64 independent
-// accumulators give plenty of instruction-level parallelism.
-//
-// Interleaved thread->output mapping (conflict-free scalar shared reads):
-//   thread (tx, ty) owns rows  { i*16 + ty }  and columns { j*16 + tx },
-//   i, j = 0..7. In a warp (32 threads = 2 values of ty, 16 values of tx):
-//   Bs[k][j*16+tx] -> 16 consecutive floats (distinct banks),
-//   As[i*16+ty][k] -> only 2 distinct addresses 8 floats apart (distinct banks).
-// Global loads here are scalar (kernel 5 vectorizes them).
 #include "kernel_common.h"
 #include "../sgemm.h"
 

@@ -1,22 +1,3 @@
-// main.cu - benchmark + verification harness for the SGEMM optimisation ladder.
-//
-// For every requested size N it:
-//   1. creates random N x N matrices A and B (fixed seed, values in [-1, 1]),
-//   2. computes the reference C with cublasSgemm,
-//   3. runs each of our kernels, compares against the reference
-//      (max abs error, error relative to max|C_ref|) and prints PASS/FAIL,
-//   4. times each kernel and cuBLAS with cudaEvents: warmup runs, then the
-//      MEDIAN of `iters` timed runs (one launch per event pair),
-//   5. prints GFLOPS and % of cuBLAS, and appends everything to a CSV.
-//
-// Usage:
-//   sgemm_bench [--kernel all|naive|coalesced|smem_tiled|reg_blocked|vectorized]
-//               [--sizes 512,1024,2048,4096] [--warmup 3] [--iters 20]
-//               [--csv results/results.csv] [--profile]
-//
-// --profile : run exactly ONE launch of ONE kernel at the first size, with no
-//             cuBLAS and no verification. Used by scripts/profile.sh so that
-//             Nsight Compute sees a single, clean kernel launch.
 
 #include <cublas_v2.h>
 #include <cuda_runtime.h>

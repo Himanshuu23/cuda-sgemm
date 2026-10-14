@@ -1,12 +1,3 @@
-// cpu_emulation_test.cpp - checks the index math of all five kernels on the CPU.
-//
-// The kernel .cu files are #included as plain C++ with CUDA keywords mapped to
-// a thread-based emulator (tests/cuda_emul.h). Each emulated kernel is compared
-// against a double-precision triple loop. This validates tiling, thread->element
-// mapping, shared-memory indexing and the float4/transpose logic. It does NOT
-// say anything about performance, bank conflicts or real-GPU behaviour.
-//
-// Build & run:  make emu-test
 #define SGEMM_CPU_EMULATION
 #define SGEMM_NO_LAUNCHER
 #include "cuda_emul.h"

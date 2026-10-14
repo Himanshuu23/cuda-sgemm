@@ -1,28 +1,3 @@
-// vectorized.cu - Kernel 5: kernel 4 + float4 global/shared accesses,
-// A tile stored transposed in shared memory, padding against bank conflicts.
-//
-// Launch: block = 256 threads (viewed as 16x16), grid = (N/128, N/128).
-// Same tiling as kernel 4: BM = BN = 128, BK = 8, 8x8 outputs per thread.
-//
-// What changed vs kernel 4
-// ------------------------
-// 1. float4 global loads. The A tile (128x8) is 256 float4s and so is the B
-//    tile (8x128): exactly ONE 16-byte load per thread per tile. Fewer load
-//    instructions, wider memory transactions.
-// 2. A is stored TRANSPOSED in shared memory: As[k][m] instead of As[m][k].
-//    The inner loop needs, for one k, the thread's 8 values of A down a
-//    column of the tile. Transposed, those 8 values are contiguous in memory,
-//    so they can be fetched as two LDS.128 instead of eight LDS.32.
-// 3. Padding: As rows are A_LD = 128 + 4 floats. The transposing STORES
-//    (As[(a_k+q)*A_LD + a_m]) would otherwise put the a_k=0 and a_k=4
-//    threads of a warp 4*128 floats apart = same bank (2-way conflict). With
-//    pad 4 the shift is 4*132 = 528 = 16 (mod 32) banks, so they interleave
-//    perfectly. 132*4 bytes is a multiple of 16, so float4 reads stay aligned.
-// 4. Output layout: each thread owns TWO groups of 4 contiguous rows
-//    {ty*4 .. ty*4+3} and {64+ty*4 .. +3}, and likewise for columns. Reading
-//    a group is one float4. A quarter-warp (8 threads, the unit an LDS.128
-//    is serviced in) then touches 8 consecutive float4s = 128 contiguous
-//    bytes = all 32 banks once -> conflict-free. The C store is two float4s per row.
 #include "kernel_common.h"
 #include "../sgemm.h"
 
