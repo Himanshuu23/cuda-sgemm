@@ -1,0 +1,6 @@
+==PROF== Connected to process 621 (/mnt/c/Users/hp/Desktop/projects/cuda-sgemm/build/sgemm_bench)
+==PROF== Profiling "sgemm_reg_blocked": 0%....50%....100% - 7 passes
+GPU: NVIDIA GeForce RTX 2050 | cc 8.6 | 16 SMs | 4.00 GB
+profile run done: reg_blocked N=2048
+==PROF== Disconnected from process 621
+==PROF== Report: /mnt/c/Users/hp/Desktop/projects/cuda-sgemm/results/ncu/reg_blocked.ncu-repz
