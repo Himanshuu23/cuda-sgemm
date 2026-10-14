@@ -66,10 +66,6 @@ Terminal output of the full benchmark run (N = 512, 1024 and N = 2048, 4096):
 ![N=512,1024](docs/bench_512_1024.png)
 ![N=2048,4096](docs/bench_2048_4096.png)
 
-Earlier smoke test (N=512 only, 5 timed runs, so its numbers differ slightly from the full run above):
-
-![smoke test](docs/smoke_test_512.png)
-
 ### Nsight Compute (N = 2048)
 
 Measured with `scripts/profile.sh` (one launch per kernel).
