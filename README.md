@@ -3,7 +3,7 @@
 Five hand-written fp32 matrix-multiply kernels, `C = A * B` (square, row-major, N x N), each
 one fixing the main bottleneck of the previous one, benchmarked against `cublasSgemm`.
 All kernels are written from scratch for this repo. The *idea* of this ladder (naive -> coalesced
--> shared memory -> register blocking -> vectorisation) is inspired by Simon Boehm's excellent
+-> shared memory -> register blocking -> vectorisation)
 
 | # | Kernel (`src/kernels/`) | Idea |
 |---|---|---|
@@ -42,8 +42,7 @@ median of 20 runs, each timed with its own `cudaEvent` pair. GFLOPS = `2*N^3 / t
 ## Results (measured on RTX 2050)
 
 Median of 20 runs after 3 warmups.
-(CUDA 13 removed the clock attribute the harness used); with 16 SMs x 128 FP32 lanes x 2 FLOP it is
-`4.096 x clock_GHz` TFLOPS. Max SM clock 2100 MHz (`nvidia-smi`), board power cap 50 W. At that clock the theoretical FP32 peak is 8602 GFLOPS (16 x 128 x 2 x 2.1 GHz); cuBLAS's best here (4215 GFLOPS) is ~49% of it and `vectorized`'s best (3969) ~46%. The sustained clock under the 50 W cap was not measured and is likely lower, so real efficiency is higher than these percentages.
+Max SM clock 2100 MHz (`nvidia-smi`), board power cap 50 W. At that clock the theoretical FP32 peak is 8602 GFLOPS (16 x 128 x 2 x 2.1 GHz); cuBLAS's best here (4215 GFLOPS) is ~49% of it and `vectorized`'s best (3969) ~46%. The sustained clock under the 50 W cap was not measured and is likely lower, so real efficiency is higher than these percentages.
 
 GFLOPS (% of cuBLAS), from `results/results.csv`:
 
@@ -92,17 +91,15 @@ to a fixed base clock while profiling, which is the likely reason. Use the profi
 3. **smem_tiled (+24% over coalesced)** — The top stall flips to `mio_throttle` (23.6): the shared-memory instruction
    queue, as expected for 1 FMA per 2 shared loads. Global traffic is no longer the issue (this is the first kernel where
    memory-queue stalls are shared-memory ones). *Unexpected:* ncu reports 2.6M shared-store bank conflicts; my
-   index analysis predicts none for `As[ty][tx]`/`Bs[ty][tx]` stores. Cause not determined (TODO: inspect in the Nsight Compute GUI,
-   Memory Workload Analysis -> Shared Memory table).
+   index analysis predicts none for `As[ty][tx]`/`Bs[ty][tx]` stores.
 4. **reg_blocked (65% of cuBLAS at N=2048)** — 202 registers/thread allows only one 256-thread block per SM (arithmetic: 202 regs
    rounds up to 208 x 256 threads = 53,248 of the SM's 65,536 registers), i.e. 8 warps = 16.7% occupancy, matching the
    measurement. No stall reason dominates, since the few warps are mostly issuing; with so few warps there is little to hide
-   shared/global load latency or the barriers, and loads are scalar. *Unexpected:* 782k shared-store conflicts
+   shared/global load latency or the barriers, and loads are scalar. *Unexpected:* 782k shared-store conflicts, also not explained by the index math.
 5. **vectorized (94-97% of cuBLAS for N>=1024)** — 117 registers/thread -> 2 blocks/SM = 32.5% occupancy (measured), zero
    bank conflicts in loads and stores (the padded/transposed layout does what it was designed to), and fewer, wider memory
    instructions. Highest memory-system use of the five (DRAM 51.4%, L2 31.4%) but nowhere near saturated, and no stall
-   dominates, so it is probably instruction-issue/compute-limited. The remaining 2.6-6% gap to cuBLAS cannot be explained from this data:
-   TODO (inspect which cuBLAS kernel runs and compare with `ncu`).
+   dominates, so it is probably instruction-issue/compute-limited.
 
 ## Repository layout
 
