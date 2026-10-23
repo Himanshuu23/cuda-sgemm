@@ -3,7 +3,8 @@
 Five hand-written fp32 matrix-multiply kernels, `C = A * B` (square, row-major, N x N), each
 one fixing the main bottleneck of the previous one, benchmarked against `cublasSgemm`.
 All kernels are written from scratch for this repo. The *idea* of this ladder (naive -> coalesced
--> shared memory -> register blocking -> vectorisation)
+-> shared memory -> register blocking -> vectorisation) is inspired by Simon Boehm's article
+["How to Optimize a CUDA Matmul Kernel for cuBLAS-like Performance"](https://siboehm.com/articles/22/CUDA-MMM).
 
 | # | Kernel (`src/kernels/`) | Idea |
 |---|---|---|
